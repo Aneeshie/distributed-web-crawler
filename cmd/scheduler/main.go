@@ -32,6 +32,8 @@ func main() {
 
 	//psql
 
+	//later we'll migrate to pgx ( which is modern and faster than lib/pq)
+
 	db, err := sql.Open("postgres", cfg.PostgresURL)
 	if err != nil {
 		log.Fatal("Postgres open failed:", err)
