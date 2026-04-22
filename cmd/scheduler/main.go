@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
 	"log"
 	"test/internal/config"
+
+	_ "github.com/lib/pq"
 
 	"github.com/redis/go-redis/v9"
 )
