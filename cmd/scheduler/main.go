@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
 	"log"
 	"test/internal/config"
+
+	_ "github.com/lib/pq"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -31,6 +32,8 @@ func main() {
 	fmt.Println("Connected to Redis")
 
 	//psql
+
+	//later we'll migrate to pgx ( which is modern and faster than lib/pq)
 
 	db, err := sql.Open("postgres", cfg.PostgresURL)
 	if err != nil {
