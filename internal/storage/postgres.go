@@ -3,6 +3,8 @@ package storage
 import (
 	"database/sql"
 	"log"
+
+	_ "github.com/lib/pq"
 )
 
 //THE ONLY RESPONSIBILITY IS CONNECT TO POSTGRESQL
