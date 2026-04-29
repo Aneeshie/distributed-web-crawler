@@ -8,6 +8,7 @@ import (
 	"test/internal/fetcher"
 	"test/internal/parser"
 	"test/internal/queue"
+	"test/internal/storage"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -17,6 +18,10 @@ func main() {
 	cfg := config.Load()
 
 	fmt.Println("Loaded config")
+
+	//db init
+
+	db := storage.NewPostgresDB(cfg.PostgresURL)
 
 	//connect to redis
 
@@ -58,6 +63,15 @@ func main() {
 
 		fmt.Println("Title: ", title)
 		fmt.Println("Found Links: ", len(links))
+
+		err = storage.SavePage(db, url, title, status)
+		if err != nil {
+			fmt.Println("Failed to save the page: ", err)
+		}
+		err = storage.SaveLinks(db, url, links)
+		if err != nil {
+			fmt.Println("Failed to save links:", err)
+		}
 
 		// parse html
 		// save data

@@ -51,4 +51,3 @@ func SaveLinks(db *sql.DB, source string, links []string) error {
 
 	return nil
 }
-
