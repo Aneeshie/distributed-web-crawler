@@ -13,6 +13,7 @@ import (
 	"test/internal/limiter"
 	"test/internal/parser"
 	"test/internal/queue"
+	"test/internal/robot"
 	"test/internal/storage"
 
 	"github.com/redis/go-redis/v9"
@@ -56,6 +57,7 @@ func main() {
 
 	q := queue.NewQueue(rdb)
 	rl := limiter.New(rdb)
+	robotsChecker := robot.New(rdb)
 
 	for {
 		urlStr, err := q.PopHighest()
@@ -72,6 +74,16 @@ func main() {
 		}
 
 		domain := parsedURL.Host
+
+		allowedByRobots, err := robotsChecker.Allowed(urlStr)
+		if err != nil {
+			logWorker(workerID, "robots.txt check failed: %v", err)
+		}
+
+		if !allowedByRobots {
+			logWorker(workerID, "Blocked by robots.txt: %s", urlStr)
+			continue
+		}
 
 		allowed, err := rl.Allow(domain)
 		if err != nil {

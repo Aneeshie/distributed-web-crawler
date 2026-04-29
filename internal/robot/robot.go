@@ -13,8 +13,8 @@ import (
 
 type Checker struct {
 	client *redis.Client
-	ctx context.Context
-	http *http.Client
+	ctx    context.Context
+	http   *http.Client
 }
 
 func New(client *redis.Client) *Checker {
