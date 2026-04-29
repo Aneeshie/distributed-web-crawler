@@ -35,3 +35,20 @@ func SavePage(db *sql.DB, url, title string, status int) error {
 	return err
 }
 
+func SaveLinks(db *sql.DB, source string, links []string) error {
+	query := `
+	INSERT INTO links (source_url, target_url)
+	VALUES ($1, $2)
+	ON CONFLICT DO NOTHING
+	`
+
+	for _, link := range links {
+		_, err := db.Exec(query, source, link)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
