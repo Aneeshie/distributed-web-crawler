@@ -4,82 +4,94 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"time"
+
 	"test/internal/config"
 	"test/internal/fetcher"
 	"test/internal/parser"
 	"test/internal/queue"
 	"test/internal/storage"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
+func getWorkerID() string {
+	host, err := os.Hostname()
+	if err != nil || host == "" {
+		return "worker-unknown"
+	}
+	return host
+}
+
+func logWorker(workerID string, format string, args ...any) {
+	prefix := "[" + workerID + "] "
+	fmt.Printf(prefix+format+"\n", args...)
+}
+
 func main() {
+	workerID := getWorkerID()
+
 	cfg := config.Load()
 
-	fmt.Println("Loaded config")
+	logWorker(workerID, "Loaded config")
 
-	//db init
-
+	// PostgreSQL init
 	db := storage.NewPostgresDB(cfg.PostgresURL)
+	logWorker(workerID, "Connected to PostgreSQL")
 
-	//connect to redis
-
+	// Redis init
 	rdb := redis.NewClient(&redis.Options{
 		Addr: cfg.RedisAddr,
 	})
 
 	err := rdb.Ping(context.Background()).Err()
 	if err != nil {
-		log.Fatal("Redis connection failed: ", err)
+		log.Fatal("Redis connection failed:", err)
 	}
 
-	fmt.Println("Connected to Redis")
+	logWorker(workerID, "Connected to Redis")
 
 	q := queue.NewQueue(rdb)
+
 	for {
 		url, err := q.PopHighest()
-
 		if err != nil {
-			fmt.Println("Queue empty, waiting ....")
+			logWorker(workerID, "Queue empty, waiting...")
 			time.Sleep(3 * time.Second)
 			continue
 		}
 
-		fmt.Println("Processing: ", url)
+		logWorker(workerID, "Processing: %s", url)
 
 		status, body, err := fetcher.Fetch(url)
 		if err != nil {
-			fmt.Println("Fetch failed: ", err)
+			logWorker(workerID, "Fetch failed: %v", err)
 			continue
 		}
-		fmt.Println("Status: ", status)
-		fmt.Println("Body bytes: ", len(body))
+
+		logWorker(workerID, "Status: %d", status)
+		logWorker(workerID, "Body bytes: %d", len(body))
 
 		title, links, err := parser.Parse(url, body)
 		if err != nil {
-			fmt.Println("parse failed: ", err)
+			logWorker(workerID, "Parse failed: %v", err)
 			continue
 		}
 
-		fmt.Println("Title: ", title)
-		fmt.Println("Found Links: ", len(links))
+		logWorker(workerID, "Title: %s", title)
+		logWorker(workerID, "Found Links: %d", len(links))
 
 		err = storage.SavePage(db, url, title, status)
 		if err != nil {
-			fmt.Println("Failed to save the page: ", err)
+			logWorker(workerID, "Failed to save page: %v", err)
 		}
+
 		err = storage.SaveLinks(db, url, links)
 		if err != nil {
-			fmt.Println("Failed to save links:", err)
+			logWorker(workerID, "Failed to save links: %v", err)
 		}
 
-		// parse html
-		// save data
-		//enqueue discovered links
-
 		time.Sleep(1 * time.Second)
-
 	}
-
 }
