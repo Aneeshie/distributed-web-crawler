@@ -1,7 +1,13 @@
 run
 
 ```bash
-    docker compose up -d
+    docker compose up --build --scale worker=3 -d
+```
+
+
+For checking worker logs
+```bash
+     docker compose logs -f worker
 ```
 
 then for db
