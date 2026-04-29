@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
 	"test/internal/config"
 	"test/internal/fetcher"
+	"test/internal/limiter"
 	"test/internal/parser"
 	"test/internal/queue"
 	"test/internal/storage"
@@ -53,18 +55,39 @@ func main() {
 	logWorker(workerID, "Connected to Redis")
 
 	q := queue.NewQueue(rdb)
+	rl := limiter.New(rdb)
 
 	for {
-		url, err := q.PopHighest()
+		urlStr, err := q.PopHighest()
 		if err != nil {
 			logWorker(workerID, "Queue empty, waiting...")
 			time.Sleep(3 * time.Second)
 			continue
 		}
 
-		logWorker(workerID, "Processing: %s", url)
+		parsedURL, err := url.Parse(urlStr)
+		if err != nil || parsedURL.Host == "" {
+			logWorker(workerID, "Invalid URL: %s", urlStr)
+			continue
+		}
 
-		status, body, err := fetcher.Fetch(url)
+		domain := parsedURL.Host
+
+		allowed, err := rl.Allow(domain)
+		if err != nil {
+			logWorker(workerID, "Rate limiter failed: %v", err)
+			continue
+		}
+
+		if !allowed {
+			logWorker(workerID, "Rate limited for domain: %s", domain)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		logWorker(workerID, "Processing: %s", urlStr)
+
+		status, body, err := fetcher.Fetch(urlStr)
 		if err != nil {
 			logWorker(workerID, "Fetch failed: %v", err)
 			continue
@@ -73,7 +96,7 @@ func main() {
 		logWorker(workerID, "Status: %d", status)
 		logWorker(workerID, "Body bytes: %d", len(body))
 
-		title, links, err := parser.Parse(url, body)
+		title, links, err := parser.Parse(urlStr, body)
 		if err != nil {
 			logWorker(workerID, "Parse failed: %v", err)
 			continue
@@ -82,12 +105,12 @@ func main() {
 		logWorker(workerID, "Title: %s", title)
 		logWorker(workerID, "Found Links: %d", len(links))
 
-		err = storage.SavePage(db, url, title, status)
+		err = storage.SavePage(db, urlStr, title, status)
 		if err != nil {
 			logWorker(workerID, "Failed to save page: %v", err)
 		}
 
-		err = storage.SaveLinks(db, url, links)
+		err = storage.SaveLinks(db, urlStr, links)
 		if err != nil {
 			logWorker(workerID, "Failed to save links: %v", err)
 		}
