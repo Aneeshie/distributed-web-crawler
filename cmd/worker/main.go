@@ -43,6 +43,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Queue empty, waiting ....")
 			time.Sleep(3 * time.Second)
+			continue
 		}
 
 		fmt.Println("Processing: ", url)

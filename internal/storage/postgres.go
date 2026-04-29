@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"log"
+	"net/url"
 
 	_ "github.com/lib/pq"
 )
@@ -23,20 +24,28 @@ func NewPostgresDB(connStr string) *sql.DB {
 	return db
 }
 
-func SavePage(db *sql.DB, url, title string, status int) error {
+func SavePage(db *sql.DB, rawURL, title string, status int) error {
+
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return err
+	}
+
+	domain := parsed.Host
+
 	query := `
-	INSERT INTO pages (url, title, status_code)
-	VALUES ($1, $2, $3)
+	INSERT INTO pages (url, domain, title, status_code)
+	VALUES ($1, $2, $3, $4)
 	ON CONFLICT (url) DO UPDATE
-	SET title = EXCLUDED.title,
+	SET domain = EXCLUDED.domain,
+	    title = EXCLUDED.title,
 	    status_code = EXCLUDED.status_code,
 	    crawled_at = NOW()
 	`
 
-	_, err := db.Exec(query, url, title, status)
+	_, err = db.Exec(query, rawURL, domain, title, status)
 	return err
 }
-
 func SaveLinks(db *sql.DB, source string, links []string) error {
 	query := `
 	INSERT INTO links (source_url, target_url)
