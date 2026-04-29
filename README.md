@@ -177,24 +177,53 @@ GitHub Actions pipeline validates:
 
 ---
 
-## 🔮 Future Improvements
+## 🔮 Future Plans
 
-* Better crawl ranking / scoring
-* Retry failed requests
-* Sitemap.xml support
-* Content hashing
+### Intelligent Crawling
+
+* Better URL scoring and crawl prioritization
+* Domain-specific crawl strategies
+* Freshness-based re-crawling schedules
+
+### Reliability Improvements
+
+* Retry failed requests with exponential backoff
+* Worker health checks and heartbeat monitoring
+* Graceful shutdown with in-progress job recovery
+
+### Discovery Enhancements
+
+* Sitemap.xml parsing
+* RSS/Atom feed discovery
+* Canonical URL handling
+
+### Data & Search
+
+* Content hashing for duplicate page detection
+* Full-text search indexing
+* Export crawled data to JSON / CSV
+
+### Observability
+
 * Metrics dashboard
-* Search index generation
+* Crawl throughput monitoring
+* Error rate and latency tracking
+
+### Scaling
+
+* Kubernetes deployment support
+* Auto-scaling workers based on queue size
+* Multi-region crawling architecture
 
 ---
 
 ## 📌 Status
 
 Production-style MVP complete.
+Designed to be extended into a larger-scale crawler platform.
 
 ---
 
 ## 👨‍💻 Author
 
 Built as a distributed systems / backend engineering project in Go.
-
