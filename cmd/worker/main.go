@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"test/internal/config"
+	"test/internal/fetcher"
 	"test/internal/queue"
 	"time"
 
@@ -40,8 +41,14 @@ func main() {
 
 		fmt.Println("Processing: ", url)
 
-		//TODO
-		// fetch page
+		status, body, err := fetcher.Fetch(url)
+		if err != nil {
+			fmt.Println("Fetch failed: ", err)
+			continue
+		}
+		fmt.Println("Status: ", status)
+		fmt.Println("Body bytes: ", len(body))
+
 		// parse html
 		// save data
 		//enqueue discovered links

@@ -43,6 +43,10 @@ func (q *Queue) PopHighest() (string, error) {
 	}
 
 	url, ok := items[0].Member.(string)
+	if url == "" {
+		return "", errors.New("queue empty")
+	}
+
 	if !ok {
 		return "", errors.New("invalid queue member type")
 	}
