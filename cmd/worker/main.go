@@ -56,7 +56,7 @@ func main() {
 		fmt.Println("Status: ", status)
 		fmt.Println("Body bytes: ", len(body))
 
-		title, links, err := parser.Parse(body)
+		title, links, err := parser.Parse(url, body)
 		if err != nil {
 			fmt.Println("parse failed: ", err)
 			continue
