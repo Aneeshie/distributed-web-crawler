@@ -6,6 +6,7 @@ import (
 	"log"
 	"test/internal/config"
 	"test/internal/fetcher"
+	"test/internal/parser"
 	"test/internal/queue"
 	"time"
 
@@ -48,6 +49,15 @@ func main() {
 		}
 		fmt.Println("Status: ", status)
 		fmt.Println("Body bytes: ", len(body))
+
+		title, links, err := parser.Parse(body)
+		if err != nil {
+			fmt.Println("parse failed: ", err)
+			continue
+		}
+
+		fmt.Println("Title: ", title)
+		fmt.Println("Found Links: ", len(links))
 
 		// parse html
 		// save data
