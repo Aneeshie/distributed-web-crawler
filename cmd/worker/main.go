@@ -1,4 +1,4 @@
-package main 
+package main
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func main(){
+func main() {
 	cfg := config.Load()
 
 	fmt.Println("Loaded config")
@@ -51,4 +51,3 @@ func main(){
 	}
 
 }
-
