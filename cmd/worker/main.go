@@ -93,6 +93,10 @@ func main() {
 
 		if !allowed {
 			logWorker(workerID, "Rate limited for domain: %s", domain)
+			// Don't drop work just because we're throttled: requeue and retry later.
+			if err := q.Enqueue(urlStr, 100); err != nil {
+				logWorker(workerID, "Failed to requeue (rate limited): %v", err)
+			}
 			time.Sleep(1 * time.Second)
 			continue
 		}

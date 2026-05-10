@@ -32,9 +32,13 @@ func (l *Limiter) Allow(domain string) (bool, error) {
 			TTL:  time.Second,
 		},
 	).Result()
+	// With NX, Redis returns a nil reply if the key already exists (i.e., throttled).
+	if err == redis.Nil {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
 
-	return status == "ok", nil
+	return status == "OK", nil
 }
