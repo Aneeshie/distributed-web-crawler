@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"test/internal/config"
@@ -30,6 +31,22 @@ func getWorkerID() string {
 func logWorker(workerID string, format string, args ...any) {
 	prefix := "[" + workerID + "] "
 	fmt.Printf(prefix+format+"\n", args...)
+}
+
+const defaultEnqueueScore = 100.0
+
+// crawlableURL reports whether raw is suitable to place on the crawl queue (http/https with host).
+func crawlableURL(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https":
+		return true
+	default:
+		return false
+	}
 }
 
 func main() {
@@ -129,6 +146,21 @@ func main() {
 		err = storage.SaveLinks(db, urlStr, links)
 		if err != nil {
 			logWorker(workerID, "Failed to save links: %v", err)
+		}
+
+		for _, discovered := range links {
+			if discovered == urlStr || !crawlableURL(discovered) {
+				continue
+			}
+			already, err := storage.PageExists(db, discovered)
+			if err != nil {
+				logWorker(workerID, "PageExists check failed for %s: %v (enqueueing anyway)", discovered, err)
+			} else if already {
+				continue
+			}
+			if err := q.Enqueue(discovered, defaultEnqueueScore); err != nil {
+				logWorker(workerID, "Failed to enqueue discovered URL %s: %v", discovered, err)
+			}
 		}
 
 		time.Sleep(1 * time.Second)
